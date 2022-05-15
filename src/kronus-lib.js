@@ -77,7 +77,7 @@ class KronusLib {
             throw Error('Game is not initialize');
         }
 
-        const currentBlockTime = await anchor.getProvider().connection.getBlockTime(await anchor.getProvider().connection.getSlot(undefined));
+        const currentBlockTime = await this.connection.getBlockTime(await this.connection.getSlot(undefined));
 
         const makeMoveTx = await this.program.methods.makeMove(moveValue, new anchor.BN(currentBlockTime))
             .accounts({

@@ -63,6 +63,7 @@ class Controller {
         let ret = {};
         let game;
         let {game_id, pubkey, position} = req.body;
+
         let result = await GameHelper.move(game_id, pubkey, position);
         switch(result) {
             case Constants.ONGOING:

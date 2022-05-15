@@ -3,6 +3,7 @@ const Constants = require("./Constants");
 const DB = require("./DB");
 const SolanaHelper = require("./SolanaHelper");
 const solanaWeb3 =  require("@solana/web3.js");
+const {Wallet} = require("@project-serum/anchor");
 
 const winningCombinations = [
     [0, 1, 2],
@@ -102,15 +103,25 @@ class GameHelper {
             DB.set(game_id, game);
 
             // write to solana
-            let signerPubkey = DB.get('GAMER_TO_SIGNER')[pubkey].PublicKey;
-            console.log('')
-            let moveTx = await SolanaHelper.contractLib.makeMove(
+            let signerPubkey = DB.get('GAMER_TO_SIGNER')[pubkey];
+            console.log('signerPubkey=', signerPubkey.publicKey.toString());
+            let transaction = await SolanaHelper.contractLib.makeMove(
                 game_id,
                 new solanaWeb3.PublicKey(pubkey),
-                signerPubkey,
+                signerPubkey.publicKey,
                 position
             );
-            console.log('moveTx=', moveTx);
+            // console.log('moveTx=', transaction);
+
+            transaction.recentBlockhash = (await SolanaHelper.connection.getLatestBlockhash()).blockhash;
+            transaction.feePayer = signerPubkey.publicKey;
+
+            // @ts-ignore
+            let signer = new Wallet(signerPubkey);
+            const signed = await signer.signTransaction(transaction);
+            const tx = await SolanaHelper.connection.sendRawTransaction(signed.serialize());
+            const txInfo = await SolanaHelper.connection.confirmTransaction(tx);
+            console.log('final txInfo:', txInfo);
 
             // compute the grid status after the move
             let gameStatus = GameHelper.computeWinner(game.grid);
